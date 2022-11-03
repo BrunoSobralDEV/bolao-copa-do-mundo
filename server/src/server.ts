@@ -1,36 +1,55 @@
 import Fastify from 'fastify'
 import cors from '@fastify/cors'
 import { PrismaClient } from '@prisma/client'
+import { z } from 'zod'
+import ShortUniqueId from 'short-unique-id'
 
 const prisma = new PrismaClient({
-    log: ['query'],
+  log: ['query'],
 })
 
 async function bootstrap() {
-    const fastify = Fastify({
-        logger: true, //gerar logs
+  const fastify = Fastify({
+    logger: true, 
+  })
+
+  await fastify.register(cors, {
+    origin: true, 
+  })
+
+  fastify.get('/pools/count', async () => {
+    const count = await prisma.pool.count()
+
+    // const pools = await prisma.pool.findMany({
+    //     where: {
+    //         code: {
+    //             startsWith: 'B'
+    //         }
+    //     }
+    // })
+
+    return { count }
+  })
+
+  fastify.post('/pools', async (request, reply) => {
+    const createPoolBody = z.object({
+      title: z.string()
     })
 
-    await fastify.register(cors, {
-        origin: true, // Qualquer aplicação
+    const { title } = createPoolBody.parse(request.body)
+
+    const generate = new ShortUniqueId({ length: 6 })
+    const code = String(generate()).toUpperCase()
+    const bru = await prisma.pool.create({
+      data: {
+        title,
+        code
+      }
     })
+    return reply.status(201).send({ code })
+  })
 
-    // CONTAGEM DE BOLÕES
-    fastify.get('/pools/count', async () => {
-        const count = await prisma.pool.count()
-
-        // const pools = await prisma.pool.findMany({
-        //     where: {
-        //         code: {
-        //             startsWith: 'B'
-        //         }
-        //     }
-        // })
-
-        return { count }
-    })
-
-    await fastify.listen({ port: 3333, host: '0.0.0.0' })
+  await fastify.listen({ port: 3333, host: '0.0.0.0' })
 }
 
 bootstrap()
