@@ -6,15 +6,7 @@ import { prisma } from "../lib/prisma"
 export async function poolRoutes(fastify: FastifyInstance) {
   fastify.get('/pools/count', async () => {
     const count = await prisma.pool.count()
-  
-    // const pools = await prisma.pool.findMany({
-    //     where: {
-    //         code: {
-    //             startsWith: 'B'
-    //         }
-    //     }
-    // })
-    
+
     return { count }
   })
 
@@ -27,12 +19,37 @@ export async function poolRoutes(fastify: FastifyInstance) {
 
     const generate = new ShortUniqueId({ length: 6 })
     const code = String(generate()).toUpperCase()
-    const bru = await prisma.pool.create({
-      data: {
-        title,
-        code
-      }
-    })
+   
+    try {
+      await request.jwtVerify()
+
+      // código chegar aqui, tenho usuário autenticado
+      await prisma.pool.create({
+        data: {
+          title,
+          code,
+          ownerId: request.user.sub,
+
+          participants: {
+            create: {
+              userId: request.user.sub,
+            }
+          }
+        }
+      })
+    } catch (error) {
+      // aqui é porque não tenho um usuário autenticado
+      // isso porque a criação do bolão pela web não tem login
+      await prisma.pool.create({
+        data: {
+          title,
+          code
+        }
+      })
+    }
+
+    
+
     return reply.status(201).send({ code })
   })
 }
