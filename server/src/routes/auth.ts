@@ -1,3 +1,5 @@
+import fetch from 'cross-fetch';
+
 import { FastifyInstance } from "fastify"
 import { z } from "zod"
 import { prisma } from "../lib/prisma"
