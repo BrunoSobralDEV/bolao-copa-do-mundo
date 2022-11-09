@@ -9,6 +9,7 @@ import { Button } from "../components/Button";
 import { Header } from "../components/Header";
 import { PoolCard, PoolCardPros } from '../components/PoolCard';
 import { Loading } from '../components/Loading';
+import { EmptyPoolList } from '../components/EmptyPoolList';
 
 
 export function Pools() {
@@ -54,11 +55,17 @@ export function Pools() {
         />
       </VStack>
 
-      <FlatList
+      {
+        isLoading ? <Loading />: 
+        <FlatList
         data={pools}
         keyExtractor={item => item.id}
         renderItem={({ item }) => <PoolCard data={item} />}
-      />
+        px={5}
+        showsVerticalScrollIndicator={false}
+        _contentContainerStyle={{ pb: 10 }}
+        ListEmptyComponent={() => <EmptyPoolList />}
+      />}
     </VStack>
   )
 }
